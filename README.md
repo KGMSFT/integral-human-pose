@@ -1,3 +1,9 @@
+try to add fpn
+
+
+
+
+
 # Integral Human Pose Regression
 
 The major contributors of this repository include [Xiao Sun](https://jimmysuen.github.io/), [Chuankang Li](https://github.com/lck1201), [Bin Xiao](https://github.com/leoxiaobin), [Fangyin Wei](https://weify627.github.io/), [Yichen Wei](https://github.com/YichenWei).
