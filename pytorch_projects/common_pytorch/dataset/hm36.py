@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 import pickle as pk
-
+from scipy.io import loadmat
 from .imdb import IMDB
 
 from common.utility.utils import calc_total_skeleton_length, calc_kpt_bound_pad, \
@@ -167,7 +167,41 @@ def parsing_hm36_gt_file(gt_file):
     img_width = np.asarray(float(img_width))
     img_height = np.asarray(float(img_height))
     return keypoints, trans, jt_list, rot, fl, c_p, img_width, img_height
+def parsing_hm36_gt_matfile(gt_file):
+    '''
+    
+    return
+        keypoints, trans, rot, fl, c_p, img_width, img_height
+    '''
 
+    annot = loadmat(gt_file)
+    keypoints = annot['pose3d_world']
+    trans = annot['T']
+    rot = annot['R']
+    img_height = annot['img_height']
+    img_width = annot['img_width']
+    fl = annot['f']
+    c_p = annot['c']
+    keypoints = keypoints.astype(np.float64)
+
+    # keep precision consistent with the original paper
+    keypoints = np.around(keypoints, decimals=6)
+    trans = np.around(trans, decimals=6)
+    rot = np.around(rot, decimals=6)
+    fl = np.around(fl, decimals=6)
+    c_p = np.around(c_p, decimals=6)
+    
+    fl = fl.reshape(2,)
+    c_p = c_p.reshape(2,)
+    trans = trans.reshape(3,)
+
+    # add throax
+    throax = (keypoints[:, s_36_lsh_jt_idx,:] + keypoints[:, s_36_rsh_jt_idx, :]) * 0.5
+    throax = throax.reshape((throax.shape[0], 1, throax.shape[1]))
+    keypoints = np.concatenate((keypoints, throax), axis=1)
+
+    return keypoints, trans, rot, fl, c_p, img_width, img_height
+    
 def CamProj(x, y, z, fx, fy, u, v):
     cam_x = x / z * fx
     cam_x = cam_x + u
@@ -389,10 +423,17 @@ class hm36(IMDB):
         for n_folder in range(folder_start, folder_end):
             print('Loading folder ', n_folder, ' in ', len(folders))
 
+            print(self.dataset_path)
+            # broken video
+            if folders[n_folder] == 's_11_act_02_subact_02_ca_01':
+                continue
             # load ground truth
-            keypoints, trans, jt_list, rot, fl, c_p, img_width, img_height = parsing_hm36_gt_file(
-                os.path.join(self.dataset_path, "annot", folders[n_folder], 'matlab_meta.txt'))
+            # keypoints, trans, jt_list, rot, fl, c_p, img_width, img_height = parsing_hm36_gt_file(
+            #     os.path.join(self.dataset_path, "annot", folders[n_folder], 'matlab_meta.txt'))
 
+            keypoints, trans, rot, fl, c_p, img_width, img_height = parsing_hm36_gt_matfile(
+                os.path.join(self.dataset_path, 'images', folders[n_folder], 'h36m_meta.mat')
+            )
             # random sample redundant video sequence
             if sample_num > 0:
                 img_index = np.random.choice(keypoints.shape[0], sample_num, replace=False)
@@ -411,7 +452,7 @@ class hm36(IMDB):
                 skeleton_length = calc_total_skeleton_length_bone(pt_3d, s_36_bone_jts)
 
                 gt_db.append({
-                    'image': os.path.join(self.dataset_path, '', 'images', image_name),
+                    'image': os.path.join(self.dataset_path[5:], '', 'images', image_name),
                     'center_x': (rect2d_l + rect2d_r) * 0.5,
                     'center_y': (rect2d_t + rect2d_b) * 0.5,
                     'width': (rect2d_r - rect2d_l),

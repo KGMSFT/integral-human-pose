@@ -42,7 +42,7 @@ class single_patch_Dataset(data.Dataset):
     def __getitem__(self, index):
         the_db = self.db[index]
         img_patch, label, label_weight = \
-            get_single_patch_sample(the_db['image'], the_db['center_x'], the_db['center_y'],
+            get_single_patch_sample('../..' + the_db['image'], the_db['center_x'], the_db['center_y'],
                                     the_db['width'], the_db['height'],
                                     the_db['joints_3d'].copy(), the_db['joints_3d_vis'].copy(),
                                     the_db['flip_pairs'].copy(), the_db['parent_ids'].copy(),
@@ -109,7 +109,7 @@ class mpii_hm36_Dataset(data.Dataset):
             the_db = self.db1[self.idx[index - self.num_samples0]]
 
         img_patch, label, label_weight = \
-            get_single_patch_sample(the_db['image'], the_db['center_x'], the_db['center_y'],
+            get_single_patch_sample('../..' + the_db['image'], the_db['center_x'], the_db['center_y'],
                                     the_db['width'], the_db['height'],
                                     the_db['joints_3d'].copy(), the_db['joints_3d_vis'].copy(),
                                     self.db1[0]['flip_pairs'].copy(), self.db1[0]['parent_ids'].copy(),
